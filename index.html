@@ -103,6 +103,8 @@
   .tile.pic{width:78px; height:82px; background:#fff!important; font-size:44px;
     box-shadow:0 6px 0 rgba(58,43,82,.18); border:4px solid #fff;}
   .tile.pic:nth-child(n){background:#fff!important;}
+  .tile.pic.word{width:auto; min-width:96px; height:64px; font-size:20px; padding:0 18px;
+    color:var(--purple); font-weight:bold;}
   .score-hit{position:fixed; z-index:60; font-weight:bold; font-size:26px; pointer-events:none;
     animation:floatup 1s forwards;}
   @keyframes floatup{to{transform:translateY(-46px); opacity:0;}}
@@ -175,6 +177,9 @@
     <div style="margin-top:10px;">
       <button class="pill" id="challengePill" onclick="toggleChallenge(this)">🔥 Tryb wyzwanie (cały alfabet): NIE</button>
     </div>
+    <div style="margin-top:10px;">
+      <button class="pill" id="wordPill" onclick="toggleWord(this)">🖼️ Gra „Ułóż": OBRAZKI</button>
+    </div>
     <p style="color:#8a7ba6; font-size:13px; margin-top:10px;">
       Podpisy: w grze „Znajdź przedmiot" nazwy są domyślnie ukryte, by dziecko samo rozpoznało przedmiot.<br>
       Tryb wyzwanie: w grach z układaniem trzeba ułożyć <b>cały alfabet</b> — jedna pomyłka i zaczynasz od początku!
@@ -215,7 +220,7 @@
     <div class="progress" id="g3progress"></div>
     <div class="stars" id="g3score" style="min-width:170px; font-size:16px;"></div>
   </div>
-  <p class="prompt">Klikaj obrazki po kolei — od tego na literę najwcześniejszą w alfabecie:</p>
+  <p class="prompt" id="g3prompt">Klikaj obrazki po kolei — od tego na literę najwcześniejszą w alfabecie:</p>
   <div class="slots" id="g3slots"></div>
   <div class="tiles" id="g3tiles"></div>
   <p class="hint" id="g3hint">Za każdy dobry obrazek +10 pkt. Za pomyłkę −3 pkt. Bez błędów: bonus +20! 🏆</p>
@@ -265,6 +270,9 @@ function toggleNames(el){showNames=!showNames; el.textContent="🔤 Podpisy pod 
 
 let challenge = false;
 function toggleChallenge(el){challenge=!challenge; el.textContent="🔥 Tryb wyzwanie (cały alfabet): "+(challenge?"TAK":"NIE"); el.classList.toggle('active',challenge); beep(challenge?720:520,.06);}
+
+let wordMode = false;
+function toggleWord(el){wordMode=!wordMode; el.textContent=(wordMode?`📝 Gra „Ułóż": SŁOWA`:`🖼️ Gra „Ułóż": OBRAZKI`); el.classList.toggle('active',wordMode); beep(wordMode?720:520,.06);}
 
 /* ====== DŹWIĘKI ====== */
 let actx;
@@ -425,7 +433,10 @@ function startGame3(){
   g3next=0; g3mist=0; show("game3"); renderG3();
 }
 function renderG3(){
-  document.getElementById("g3progress").textContent=`Ułóż ${g3seq.length} obrazków`;
+  document.getElementById("g3progress").textContent=`Ułóż ${g3seq.length} ${wordMode?"słów":"obrazków"}`;
+  document.getElementById("g3prompt").textContent = wordMode
+    ? "Klikaj słowa po kolei — od tego na literę najwcześniejszą w alfabecie:"
+    : "Klikaj obrazki po kolei — od tego na literę najwcześniejszą w alfabecie:";
   updG3score();
   const slots=document.getElementById("g3slots"); slots.innerHTML="";
   g3seq.forEach((it,i)=>{
@@ -434,7 +445,8 @@ function renderG3(){
   });
   const tiles=document.getElementById("g3tiles"); tiles.innerHTML="";
   shuffle(g3seq).forEach(it=>{
-    const t=document.createElement("button"); t.className="tile pic"; t.textContent=it[1][0];
+    const t=document.createElement("button"); t.className="tile pic"+(wordMode?" word":"");
+    t.textContent = wordMode ? it[1][1] : it[1][0];
     t.dataset.letter=it[0]; t.title=it[1][1];
     t.onclick=(ev)=>pickG3(t,it[0],ev); tiles.appendChild(t);
   });
@@ -460,7 +472,10 @@ function pickG3(tile,letter,ev){
       const msg = (g3mist===0)
         ? `Bez ani jednej pomyłki! Bonus +20 pkt. 🌟<br>Masz teraz <b>${g3points}</b> pkt. Rekord: ${getRekord()} 🏆`
         : `Ułożone! Masz <b>${g3points}</b> pkt. Rekord: ${getRekord()} 🏆`;
-      winOverlay(challenge?"CAŁY ALFABET z obrazków!":"Obrazki ułożone!", msg, startGame3);
+      const winTitle = challenge
+        ? (wordMode?"CAŁY ALFABET ze słów!":"CAŁY ALFABET z obrazków!")
+        : (wordMode?"Słowa ułożone!":"Obrazki ułożone!");
+      winOverlay(winTitle, msg, startGame3);
     }
   }else{
     tile.classList.add("bad"); sadSound();
