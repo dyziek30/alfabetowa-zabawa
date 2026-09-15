@@ -100,6 +100,12 @@
   .tile:active{transform:translateY(3px);}
   .tile.used{opacity:.25; pointer-events:none; transform:scale(.8);}
   .tile.bad{animation:shake .4s;}
+  .tile.pic{width:78px; height:82px; background:#fff!important; font-size:44px;
+    box-shadow:0 6px 0 rgba(58,43,82,.18); border:4px solid #fff;}
+  .tile.pic:nth-child(n){background:#fff!important;}
+  .score-hit{position:fixed; z-index:60; font-weight:bold; font-size:26px; pointer-events:none;
+    animation:floatup 1s forwards;}
+  @keyframes floatup{to{transform:translateY(-46px); opacity:0;}}
 
   .hint{text-align:center; color:#8a7ba6; font-size:15px; margin-top:4px;}
 
@@ -151,6 +157,11 @@
       <h2>Ułóż litery</h2>
       <p>Poukładaj rozsypane litery po kolei, alfabetycznie.</p>
     </div>
+    <div class="game-card" onclick="startGame3()">
+      <span class="ico">🖼️</span>
+      <h2>Ułóż obrazki <span style="color:var(--orange)">+ punkty</span></h2>
+      <p>Ułóż obrazki alfabetycznie (wg pierwszej litery). Zbieraj punkty i bij rekord!</p>
+    </div>
   </div>
 
   <div class="diff">
@@ -189,6 +200,19 @@
   <div class="slots" id="g2slots"></div>
   <div class="tiles" id="g2tiles"></div>
   <p class="hint">Podpowiedź: która litera jest w alfabecie najwcześniej?</p>
+</div>
+
+<!-- ===== GAME 3: Ułóż obrazki (punktowane) ===== -->
+<div id="game3" class="screen hidden">
+  <div class="topbar">
+    <button class="back-btn" onclick="goMenu()">⬅ Menu</button>
+    <div class="progress" id="g3progress"></div>
+    <div class="stars" id="g3score" style="min-width:170px; font-size:16px;"></div>
+  </div>
+  <p class="prompt">Klikaj obrazki po kolei — od tego na literę najwcześniejszą w alfabecie:</p>
+  <div class="slots" id="g3slots"></div>
+  <div class="tiles" id="g3tiles"></div>
+  <p class="hint" id="g3hint">Za każdy dobry obrazek +10 pkt. Za pomyłkę −3 pkt. Bez błędów: bonus +20! 🏆</p>
 </div>
 
 <script>
@@ -357,6 +381,67 @@ function pickG2(tile,letter){
     }
   }else{
     tile.classList.add("bad"); sadSound(); setTimeout(()=>tile.classList.remove("bad"),450);
+  }
+}
+
+/* ====== GRA 3: Ułóż obrazki (punktowane) ====== */
+let g3seq=[], g3next=0, g3mist=0, g3points=0;
+function getRekord(){try{return parseInt(localStorage.getItem("alfabet_rekord"))||0;}catch(e){return 0;}}
+function setRekord(v){try{localStorage.setItem("alfabet_rekord",v);}catch(e){}}
+function updG3score(){
+  document.getElementById("g3score").innerHTML=`⭐ ${g3points} pkt &nbsp; 🏆 ${getRekord()}`;
+}
+function startGame3(){
+  const n = diff==="easy"?4:(diff==="mid"?5:6);
+  const letters = shuffle(LETTERS_WITH_WORDS).slice(0,n).sort((a,b)=>ORDER[a]-ORDER[b]);
+  g3seq = letters.map(l=>[l, WORDS[l][Math.floor(Math.random()*WORDS[l].length)]]);
+  g3next=0; g3mist=0; show("game3"); renderG3();
+}
+function renderG3(){
+  document.getElementById("g3progress").textContent=`Ułóż ${g3seq.length} obrazków`;
+  updG3score();
+  const slots=document.getElementById("g3slots"); slots.innerHTML="";
+  g3seq.forEach((it,i)=>{
+    const s=document.createElement("div"); s.className="slot"+(i<g3next?" filled":"");
+    s.textContent=i<g3next?g3seq[i][0]:"?"; s.id="g3slot"+i; slots.appendChild(s);
+  });
+  const tiles=document.getElementById("g3tiles"); tiles.innerHTML="";
+  shuffle(g3seq).forEach(it=>{
+    const t=document.createElement("button"); t.className="tile pic"; t.textContent=it[1][0];
+    t.dataset.letter=it[0]; t.title=it[1][1];
+    t.onclick=(ev)=>pickG3(t,it[0],ev); tiles.appendChild(t);
+  });
+}
+function floatScore(x,y,txt,color){
+  const s=document.createElement("div"); s.className="score-hit"; s.textContent=txt;
+  s.style.left=x+"px"; s.style.top=y+"px"; s.style.color=color;
+  document.body.appendChild(s); setTimeout(()=>s.remove(),1000);
+}
+function pickG3(tile,letter,ev){
+  if(tile.classList.contains("used")) return;
+  const r=tile.getBoundingClientRect();
+  if(letter===g3seq[g3next][0]){
+    tile.classList.add("used"); beep(523+g3next*60,.12);
+    const s=document.getElementById("g3slot"+g3next); s.textContent=letter; s.classList.add("filled");
+    g3points+=10; floatScore(r.left+r.width/2-14, r.top-6, "+10", "#2e7c3c");
+    g3next++; updG3score();
+    if(g3next>=g3seq.length){
+      let bonus=0;
+      if(g3mist===0){ bonus=20; g3points+=20; }
+      if(g3points>getRekord()) setRekord(g3points);
+      updG3score();
+      const msg = (g3mist===0)
+        ? `Bez ani jednej pomyłki! Bonus +20 pkt. 🌟<br>Masz teraz <b>${g3points}</b> pkt. Rekord: ${getRekord()} 🏆`
+        : `Ułożone! Masz <b>${g3points}</b> pkt. Rekord: ${getRekord()} 🏆`;
+      winOverlay("Obrazki ułożone!", msg, startGame3);
+    }
+  }else{
+    tile.classList.add("bad"); sadSound();
+    g3mist++; g3points=Math.max(0,g3points-3);
+    floatScore(r.left+r.width/2-14, r.top-6, "−3", "#d33");
+    updG3score();
+    document.getElementById("g3hint").textContent="Ups! Poszukaj obrazka na wcześniejszą literę alfabetu. 😊";
+    setTimeout(()=>tile.classList.remove("bad"),450);
   }
 }
 </script>
