@@ -158,6 +158,10 @@
     <button class="pill" data-diff="easy" onclick="setDiff('easy',this)">🐣 Łatwy</button>
     <button class="pill active" data-diff="mid" onclick="setDiff('mid',this)">🐰 Średni</button>
     <button class="pill" data-diff="hard" onclick="setDiff('hard',this)">🦉 Trudny</button>
+    <div style="margin-top:16px;">
+      <button class="pill" id="namesPill" onclick="toggleNames(this)">🔤 Podpisy pod obrazkami: NIE</button>
+    </div>
+    <p style="color:#8a7ba6; font-size:13px; margin-top:10px;">W grze „Znajdź przedmiot" nazwy są domyślnie ukryte,<br>żeby dziecko samo rozpoznało przedmiot i jego pierwszą literę.</p>
   </div>
 </div>
 
@@ -200,8 +204,8 @@ const WORDS = {
   "D":[["🏠","Dom"],["🌳","Drzewo"]],
   "F":[["🦭","Foka"],["🚩","Flaga"]],
   "G":[["🍐","Gruszka"],["⭐","Gwiazda"]],
-  "H":[["🛴","Hulajnoga"],["🍵","Herbata"]],
-  "I":[["🪡","Igła"],["🧊","Iglak"]],
+  "H":[["🛴","Hulajnoga"]],
+  "I":[["🪡","Igła"]],
   "J":[["🍎","Jabłko"],["🥚","Jajko"]],
   "K":[["🐱","Kot"],["🌸","Kwiat"]],
   "L":[["🦁","Lew"],["🍦","Lody"]],
@@ -214,8 +218,8 @@ const WORDS = {
   "S":[["☀️","Słońce"],["🚗","Samochód"]],
   "Ś":[["🐌","Ślimak"],["❄️","Śnieg"]],
   "T":[["🎂","Tort"],["🍓","Truskawka"]],
-  "U":[["👂","Ucho"],["🐝","Ul"]],
-  "W":[["💧","Woda"],["🐍","Wąż"]],
+  "U":[["👂","Ucho"]],
+  "W":[["🐍","Wąż"]],
   "Z":[["🦓","Zebra"],["⏰","Zegar"]],
   "Ż":[["🐸","Żaba"],["🦒","Żyrafa"]]
 };
@@ -224,7 +228,10 @@ const LETTERS_WITH_WORDS = Object.keys(WORDS);
 const PRAISE = ["Brawo! 🎉","Super! ⭐","Ekstra! 🌟","Wspaniale! 💜","Świetnie! 👏","Doskonale! 🏆","Tak trzymaj! 🚀"];
 
 let diff = "mid";
-function setDiff(d,el){diff=d; document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); beep(660,.06);}
+function setDiff(d,el){diff=d; document.querySelectorAll('.pill[data-diff]').forEach(p=>p.classList.remove('active')); el.classList.add('active'); beep(660,.06);}
+
+let showNames = false;
+function toggleNames(el){showNames=!showNames; el.textContent="🔤 Podpisy pod obrazkami: "+(showNames?"TAK":"NIE"); el.classList.toggle('active',showNames); beep(showNames?720:520,.06);}
 
 /* ====== DŹWIĘKI ====== */
 let actx;
@@ -292,7 +299,7 @@ function renderG1(){
   const box=document.getElementById("g1options"); box.innerHTML="";
   shown.forEach(o=>{
     const b=document.createElement("button"); b.className="opt";
-    b.innerHTML=`<span class="emoji">${o[1][0]}</span><span class="word">${o[1][1]}</span>`;
+    b.innerHTML=`<span class="emoji">${o[1][0]}</span>`+(showNames?`<span class="word">${o[1][1]}</span>`:``);
     b.onclick=()=>pickG1(b,o[0]===("correct"),letter);
     box.appendChild(b);
   });
