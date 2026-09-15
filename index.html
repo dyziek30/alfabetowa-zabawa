@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Alfabetowa Zabawa 🎈</title>
+<style>
+  :root{
+    --pink:#ff6ba6; --purple:#9b5de5; --blue:#4cc9f0; --green:#5ec26a;
+    --yellow:#ffd23f; --orange:#ff924c; --red:#ff5d5d;
+    --ink:#3a2b52; --paper:#fff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    font-family:"Comic Sans MS","Baloo 2",Verdana,system-ui,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(135deg,#ffe4f1 0%,#e7e0ff 45%,#dcf4ff 100%);
+    min-height:100%;
+    display:flex; flex-direction:column; align-items:center;
+    padding:16px; user-select:none;
+    overflow-x:hidden;
+  }
+  h1{font-size:clamp(28px,7vw,52px); margin:8px 0 4px; text-align:center;
+     color:var(--purple); text-shadow:2px 2px 0 #fff, 4px 4px 0 rgba(155,93,229,.25);}
+  .subtitle{color:#7a6b96; margin:0 0 18px; font-size:clamp(14px,3.5vw,18px);}
+  .screen{width:100%; max-width:760px; flex:1; display:flex; flex-direction:column;}
+  .hidden{display:none!important;}
+
+  /* Menu */
+  .menu-cards{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:10px;}
+  @media(max-width:560px){.menu-cards{grid-template-columns:1fr;}}
+  .game-card{
+    background:var(--paper); border-radius:28px; padding:26px 20px; cursor:pointer;
+    box-shadow:0 8px 0 rgba(58,43,82,.12), 0 14px 30px rgba(58,43,82,.14);
+    border:4px solid #fff; transition:transform .12s, box-shadow .12s; text-align:center;
+  }
+  .game-card:hover{transform:translateY(-4px);}
+  .game-card:active{transform:translateY(2px); box-shadow:0 4px 0 rgba(58,43,82,.12);}
+  .game-card .ico{font-size:64px; display:block; margin-bottom:8px;}
+  .game-card h2{margin:6px 0; font-size:24px;}
+  .game-card p{margin:0; color:#8a7ba6; font-size:15px;}
+
+  .diff{margin:26px auto 0; text-align:center;}
+  .diff .lbl{display:block; color:#7a6b96; margin-bottom:10px; font-size:16px;}
+  .pill{
+    border:none; background:#fff; color:var(--ink); font-family:inherit;
+    padding:12px 22px; border-radius:999px; font-size:17px; cursor:pointer; margin:4px;
+    box-shadow:0 4px 0 rgba(58,43,82,.12); font-weight:bold; transition:transform .1s;
+  }
+  .pill.active{background:var(--yellow); transform:scale(1.05);}
+  .pill:active{transform:scale(.96);}
+
+  /* Top bar in games */
+  .topbar{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .back-btn{
+    border:none; background:#fff; border-radius:999px; padding:10px 18px; cursor:pointer;
+    font-family:inherit; font-size:16px; font-weight:bold; box-shadow:0 4px 0 rgba(58,43,82,.12);
+  }
+  .back-btn:active{transform:translateY(2px);}
+  .progress{flex:1; text-align:center; font-size:18px; color:#7a6b96; font-weight:bold;}
+  .stars{font-size:22px; min-width:60px; text-align:right;}
+
+  /* Game 1 */
+  .prompt{text-align:center; margin:6px 0 4px; font-size:clamp(16px,4vw,22px); color:#7a6b96;}
+  .big-letter{
+    font-size:clamp(90px,26vw,170px); text-align:center; line-height:1; margin:2px 0 6px;
+    color:var(--pink); text-shadow:3px 3px 0 #fff, 6px 6px 0 rgba(255,107,166,.25);
+  }
+  .options{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:8px;}
+  .opt{
+    background:var(--paper); border:5px solid #fff; border-radius:26px; padding:18px 10px;
+    cursor:pointer; text-align:center; box-shadow:0 7px 0 rgba(58,43,82,.12);
+    transition:transform .1s; font-family:inherit;
+  }
+  .opt:active{transform:translateY(3px);}
+  .opt .emoji{font-size:clamp(48px,13vw,80px); display:block;}
+  .opt .word{font-size:clamp(16px,4vw,22px); margin-top:6px; font-weight:bold;}
+  .opt.correct{background:#d8f5dd; border-color:var(--green); animation:pop .4s;}
+  .opt.wrong{background:#ffe0e0; border-color:var(--red); animation:shake .4s;}
+
+  /* Game 2 */
+  .slots{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin:12px 0 22px;
+         min-height:70px; background:rgba(255,255,255,.5); border-radius:22px; padding:12px;
+         border:3px dashed #c9b8e8;}
+  .slot{
+    width:58px; height:64px; border-radius:16px; background:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:bold;
+    box-shadow:inset 0 0 0 3px #efe7ff; color:var(--purple);
+  }
+  .slot.filled{background:var(--green); color:#fff; box-shadow:none; animation:pop .3s;}
+  .tiles{display:flex; flex-wrap:wrap; gap:12px; justify-content:center;}
+  .tile{
+    width:64px; height:70px; border-radius:18px; border:none; cursor:pointer;
+    background:var(--blue); color:#fff; font-size:34px; font-weight:bold; font-family:inherit;
+    box-shadow:0 6px 0 rgba(58,43,82,.2); transition:transform .1s;
+  }
+  .tile:nth-child(3n){background:var(--orange);}
+  .tile:nth-child(3n+1){background:var(--purple);}
+  .tile:active{transform:translateY(3px);}
+  .tile.used{opacity:.25; pointer-events:none; transform:scale(.8);}
+  .tile.bad{animation:shake .4s;}
+
+  .hint{text-align:center; color:#8a7ba6; font-size:15px; margin-top:4px;}
+
+  /* Win overlay */
+  .overlay{
+    position:fixed; inset:0; background:rgba(58,43,82,.55); display:flex;
+    align-items:center; justify-content:center; z-index:50; padding:20px;
+  }
+  .win-box{
+    background:#fff; border-radius:32px; padding:34px 28px; text-align:center; max-width:420px;
+    box-shadow:0 20px 60px rgba(0,0,0,.3); animation:pop .4s;
+  }
+  .win-box .big{font-size:70px;}
+  .win-box h2{color:var(--purple); font-size:30px; margin:10px 0;}
+  .win-box p{color:#7a6b96; font-size:18px; margin:6px 0 18px;}
+  .btn-primary{
+    border:none; background:var(--green); color:#fff; font-family:inherit; font-weight:bold;
+    font-size:20px; padding:14px 28px; border-radius:999px; cursor:pointer; margin:6px;
+    box-shadow:0 6px 0 rgba(46,120,60,.4);
+  }
+  .btn-primary:active{transform:translateY(3px);}
+  .btn-ghost{
+    border:none; background:#eee5ff; color:var(--purple); font-family:inherit; font-weight:bold;
+    font-size:18px; padding:14px 24px; border-radius:999px; cursor:pointer; margin:6px;
+  }
+
+  .confetti{position:fixed; top:-20px; font-size:24px; z-index:60; pointer-events:none; animation:fall linear forwards;}
+
+  @keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+  @keyframes fall{to{transform:translateY(105vh) rotate(540deg); opacity:.9;}}
+</style>
+</head>
+<body>
+
+<h1>🎈 Alfabetowa Zabawa 🎈</h1>
+<p class="subtitle">Ucz się polskiego alfabetu przez zabawę!</p>
+
+<!-- ===== MENU ===== -->
+<div id="menu" class="screen">
+  <div class="menu-cards">
+    <div class="game-card" onclick="startGame1()">
+      <span class="ico">🔤</span>
+      <h2>Znajdź przedmiot</h2>
+      <p>Wybierz obrazek na daną literę — po kolei przez cały alfabet!</p>
+    </div>
+    <div class="game-card" onclick="startGame2()">
+      <span class="ico">🧩</span>
+      <h2>Ułóż litery</h2>
+      <p>Poukładaj rozsypane litery po kolei, alfabetycznie.</p>
+    </div>
+  </div>
+
+  <div class="diff">
+    <span class="lbl">Poziom trudności:</span>
+    <button class="pill" data-diff="easy" onclick="setDiff('easy',this)">🐣 Łatwy</button>
+    <button class="pill active" data-diff="mid" onclick="setDiff('mid',this)">🐰 Średni</button>
+    <button class="pill" data-diff="hard" onclick="setDiff('hard',this)">🦉 Trudny</button>
+  </div>
+</div>
+
+<!-- ===== GAME 1 ===== -->
+<div id="game1" class="screen hidden">
+  <div class="topbar">
+    <button class="back-btn" onclick="goMenu()">⬅ Menu</button>
+    <div class="progress" id="g1progress"></div>
+    <div class="stars" id="g1stars"></div>
+  </div>
+  <p class="prompt">Znajdź przedmiot na literę:</p>
+  <div class="big-letter" id="g1letter">A</div>
+  <div class="options" id="g1options"></div>
+  <p class="hint" id="g1hint"></p>
+</div>
+
+<!-- ===== GAME 2 ===== -->
+<div id="game2" class="screen hidden">
+  <div class="topbar">
+    <button class="back-btn" onclick="goMenu()">⬅ Menu</button>
+    <div class="progress" id="g2progress"></div>
+    <div class="stars" id="g2stars"></div>
+  </div>
+  <p class="prompt">Klikaj litery po kolei — od pierwszej do ostatniej w alfabecie:</p>
+  <div class="slots" id="g2slots"></div>
+  <div class="tiles" id="g2tiles"></div>
+  <p class="hint">Podpowiedź: która litera jest w alfabecie najwcześniej?</p>
+</div>
+
+<script>
+/* ====== POLSKI ALFABET ====== */
+const ALPHABET = ["A","Ą","B","C","Ć","D","E","Ę","F","G","H","I","J","K","L","Ł","M","N","Ń","O","Ó","P","R","S","Ś","T","U","W","Y","Z","Ź","Ż"];
+const ORDER = {}; ALPHABET.forEach((l,i)=>ORDER[l]=i);
+
+/* słowa z obrazkami — tylko litery, które mają łatwe przykłady */
+const WORDS = {
+  "A":[["🍍","Ananas"],["🍉","Arbuz"]],
+  "B":[["🍌","Banan"],["🎈","Balon"]],
+  "C":[["🍋","Cytryna"],["🧅","Cebula"]],
+  "D":[["🏠","Dom"],["🌳","Drzewo"]],
+  "F":[["🦭","Foka"],["🚩","Flaga"]],
+  "G":[["🍐","Gruszka"],["⭐","Gwiazda"]],
+  "H":[["🛴","Hulajnoga"],["🍵","Herbata"]],
+  "I":[["🪡","Igła"],["🧊","Iglak"]],
+  "J":[["🍎","Jabłko"],["🥚","Jajko"]],
+  "K":[["🐱","Kot"],["🌸","Kwiat"]],
+  "L":[["🦁","Lew"],["🍦","Lody"]],
+  "Ł":[["⛵","Łódka"],["🥄","Łyżka"]],
+  "M":[["🐭","Myszka"],["🥕","Marchewka"]],
+  "N":[["👃","Nos"],["🔪","Nóż"]],
+  "O":[["👁️","Oko"],["👓","Okulary"]],
+  "P":[["🐶","Pies"],["⚽","Piłka"]],
+  "R":[["🐟","Ryba"],["🚲","Rower"]],
+  "S":[["☀️","Słońce"],["🚗","Samochód"]],
+  "Ś":[["🐌","Ślimak"],["❄️","Śnieg"]],
+  "T":[["🎂","Tort"],["🍓","Truskawka"]],
+  "U":[["👂","Ucho"],["🐝","Ul"]],
+  "W":[["💧","Woda"],["🐍","Wąż"]],
+  "Z":[["🦓","Zebra"],["⏰","Zegar"]],
+  "Ż":[["🐸","Żaba"],["🦒","Żyrafa"]]
+};
+const LETTERS_WITH_WORDS = Object.keys(WORDS);
+
+const PRAISE = ["Brawo! 🎉","Super! ⭐","Ekstra! 🌟","Wspaniale! 💜","Świetnie! 👏","Doskonale! 🏆","Tak trzymaj! 🚀"];
+
+let diff = "mid";
+function setDiff(d,el){diff=d; document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active')); el.classList.add('active'); beep(660,.06);}
+
+/* ====== DŹWIĘKI ====== */
+let actx;
+function beep(freq,dur=.12,type="sine"){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.type=type; o.frequency.value=freq; o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(.18,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+dur);
+    o.start(); o.stop(actx.currentTime+dur);
+  }catch(e){}
+}
+function happySound(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.14),i*90));}
+function sadSound(){beep(200,.25,"triangle");}
+
+/* ====== NARZĘDZIA ====== */
+function shuffle(a){a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a;}
+function show(id){["menu","game1","game2"].forEach(s=>document.getElementById(s).classList.add("hidden")); document.getElementById(id).classList.remove("hidden");}
+function goMenu(){show("menu");}
+function confetti(){
+  const ico=["🎉","⭐","🎈","🌈","💜","🍭","🌟","🎊"];
+  for(let i=0;i<40;i++){
+    const c=document.createElement("div"); c.className="confetti"; c.textContent=ico[i%ico.length];
+    c.style.left=Math.random()*100+"vw";
+    c.style.animationDuration=(1.6+Math.random()*1.8)+"s";
+    c.style.fontSize=(18+Math.random()*22)+"px";
+    document.body.appendChild(c); setTimeout(()=>c.remove(),3600);
+  }
+}
+function winOverlay(title,msg,onNext){
+  const ov=document.createElement("div"); ov.className="overlay";
+  ov.innerHTML=`<div class="win-box"><div class="big">🏆</div><h2>${title}</h2><p>${msg}</p>
+    <button class="btn-primary" id="ovNext">Zagraj jeszcze raz 🔁</button>
+    <button class="btn-ghost" id="ovMenu">Menu 🏠</button></div>`;
+  document.body.appendChild(ov);
+  ov.querySelector("#ovNext").onclick=()=>{ov.remove(); onNext();};
+  ov.querySelector("#ovMenu").onclick=()=>{ov.remove(); goMenu();};
+  happySound(); confetti();
+}
+
+/* ====== GRA 1: Znajdź przedmiot ====== */
+let g1list=[], g1idx=0, g1score=0;
+function startGame1(){
+  g1list=LETTERS_WITH_WORDS.slice(); // pełny alfabet po kolei
+  if(diff==="easy") g1list=g1list.slice(0,8);
+  else if(diff==="mid") g1list=g1list.slice(0,16);
+  g1idx=0; g1score=0; show("game1"); renderG1();
+}
+function renderG1(){
+  const letter=g1list[g1idx];
+  document.getElementById("g1letter").textContent=letter;
+  document.getElementById("g1progress").textContent=`Litera ${g1idx+1} z ${g1list.length}`;
+  document.getElementById("g1stars").textContent="⭐".repeat(Math.min(g1score,5));
+  document.getElementById("g1hint").textContent="";
+
+  const nOpts = diff==="hard"?4:(diff==="mid"?4:3);
+  const correct = WORDS[letter][Math.floor(Math.random()*WORDS[letter].length)];
+  // dystraktory z innych liter
+  const others = shuffle(LETTERS_WITH_WORDS.filter(l=>l!==letter));
+  const opts=[["correct",correct]];
+  for(const l of others){ if(opts.length>=nOpts) break; const w=WORDS[l][Math.floor(Math.random()*WORDS[l].length)]; opts.push(["wrong",w,l]); }
+  const shown=shuffle(opts);
+
+  const box=document.getElementById("g1options"); box.innerHTML="";
+  shown.forEach(o=>{
+    const b=document.createElement("button"); b.className="opt";
+    b.innerHTML=`<span class="emoji">${o[1][0]}</span><span class="word">${o[1][1]}</span>`;
+    b.onclick=()=>pickG1(b,o[0]===("correct"),letter);
+    box.appendChild(b);
+  });
+}
+let g1lock=false;
+function pickG1(btn,isCorrect,letter){
+  if(g1lock) return;
+  if(isCorrect){
+    g1lock=true; btn.classList.add("correct"); g1score++; happySound();
+    document.getElementById("g1stars").textContent="⭐".repeat(Math.min(g1score,5));
+    document.getElementById("g1hint").textContent=PRAISE[Math.floor(Math.random()*PRAISE.length)];
+    setTimeout(()=>{
+      g1lock=false;
+      if(g1idx+1>=g1list.length){
+        winOverlay("Cały alfabet zrobiony!",`Zdobyłaś ${g1score} punktów! Jesteś mistrzynią liter! 💜`,startGame1);
+      }else{ g1idx++; renderG1(); }
+    },850);
+  }else{
+    btn.classList.add("wrong"); sadSound();
+    document.getElementById("g1hint").textContent=`Ups! To nie zaczyna się na „${letter}". Spróbuj jeszcze raz! 😊`;
+    setTimeout(()=>btn.classList.remove("wrong"),450);
+  }
+}
+
+/* ====== GRA 2: Ułóż litery ====== */
+let g2seq=[], g2next=0;
+function startGame2(){
+  const n = diff==="easy"?4:(diff==="mid"?6:8);
+  const start=Math.floor(Math.random()*(ALPHABET.length-n));
+  g2seq=ALPHABET.slice(start,start+n);   // kolejne litery alfabetu
+  g2next=0; show("game2"); renderG2();
+}
+function renderG2(){
+  document.getElementById("g2progress").textContent=`Ułóż ${g2seq.length} liter`;
+  document.getElementById("g2stars").textContent="";
+  const slots=document.getElementById("g2slots"); slots.innerHTML="";
+  g2seq.forEach((l,i)=>{
+    const s=document.createElement("div"); s.className="slot"+(i<g2next?" filled":"");
+    s.textContent=i<g2next?g2seq[i]:"?"; s.id="slot"+i; slots.appendChild(s);
+  });
+  const tiles=document.getElementById("g2tiles"); tiles.innerHTML="";
+  shuffle(g2seq).forEach(l=>{
+    const t=document.createElement("button"); t.className="tile"; t.textContent=l; t.dataset.letter=l;
+    t.onclick=()=>pickG2(t,l); tiles.appendChild(t);
+  });
+}
+function pickG2(tile,letter){
+  if(tile.classList.contains("used")) return;
+  if(letter===g2seq[g2next]){
+    tile.classList.add("used"); beep(523+g2next*60,.12);
+    const s=document.getElementById("slot"+g2next); s.textContent=letter; s.classList.add("filled");
+    g2next++;
+    if(g2next>=g2seq.length){
+      winOverlay("Litery ułożone!",`Ułożyłaś: ${g2seq.join(" ")} — perfekcyjnie! 🌟`,startGame2);
+    }
+  }else{
+    tile.classList.add("bad"); sadSound(); setTimeout(()=>tile.classList.remove("bad"),450);
+  }
+}
+</script>
+</body>
+</html>
