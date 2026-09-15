@@ -172,7 +172,13 @@
     <div style="margin-top:16px;">
       <button class="pill" id="namesPill" onclick="toggleNames(this)">🔤 Podpisy pod obrazkami: NIE</button>
     </div>
-    <p style="color:#8a7ba6; font-size:13px; margin-top:10px;">W grze „Znajdź przedmiot" nazwy są domyślnie ukryte,<br>żeby dziecko samo rozpoznało przedmiot i jego pierwszą literę.</p>
+    <div style="margin-top:10px;">
+      <button class="pill" id="challengePill" onclick="toggleChallenge(this)">🔥 Tryb wyzwanie (cały alfabet): NIE</button>
+    </div>
+    <p style="color:#8a7ba6; font-size:13px; margin-top:10px;">
+      Podpisy: w grze „Znajdź przedmiot" nazwy są domyślnie ukryte, by dziecko samo rozpoznało przedmiot.<br>
+      Tryb wyzwanie: w grach z układaniem trzeba ułożyć <b>cały alfabet</b> — jedna pomyłka i zaczynasz od początku!
+    </p>
   </div>
 </div>
 
@@ -256,6 +262,9 @@ function setDiff(d,el){diff=d; document.querySelectorAll('.pill[data-diff]').for
 
 let showNames = false;
 function toggleNames(el){showNames=!showNames; el.textContent="🔤 Podpisy pod obrazkami: "+(showNames?"TAK":"NIE"); el.classList.toggle('active',showNames); beep(showNames?720:520,.06);}
+
+let challenge = false;
+function toggleChallenge(el){challenge=!challenge; el.textContent="🔥 Tryb wyzwanie (cały alfabet): "+(challenge?"TAK":"NIE"); el.classList.toggle('active',challenge); beep(challenge?720:520,.06);}
 
 /* ====== DŹWIĘKI ====== */
 let actx;
@@ -351,10 +360,18 @@ function pickG1(btn,isCorrect,letter){
 /* ====== GRA 2: Ułóż litery ====== */
 let g2seq=[], g2next=0;
 function startGame2(){
-  const n = diff==="easy"?4:(diff==="mid"?6:8);
-  const start=Math.floor(Math.random()*(ALPHABET.length-n));
-  g2seq=ALPHABET.slice(start,start+n);   // kolejne litery alfabetu
+  if(challenge){
+    g2seq=ALPHABET.slice();              // cały alfabet
+  }else{
+    const n = diff==="easy"?4:(diff==="mid"?6:8);
+    const start=Math.floor(Math.random()*(ALPHABET.length-n));
+    g2seq=ALPHABET.slice(start,start+n); // kolejne litery alfabetu
+  }
   g2next=0; show("game2"); renderG2();
+}
+function restartBoard(slotsId,tilesId){
+  document.querySelectorAll("#"+slotsId+" .slot").forEach(s=>{s.textContent="?"; s.classList.remove("filled");});
+  document.querySelectorAll("#"+tilesId+" .tile").forEach(t=>t.classList.remove("used"));
 }
 function renderG2(){
   document.getElementById("g2progress").textContent=`Ułóż ${g2seq.length} liter`;
@@ -377,10 +394,15 @@ function pickG2(tile,letter){
     const s=document.getElementById("slot"+g2next); s.textContent=letter; s.classList.add("filled");
     g2next++;
     if(g2next>=g2seq.length){
-      winOverlay("Litery ułożone!",`Ułożyłaś: ${g2seq.join(" ")} — perfekcyjnie! 🌟`,startGame2);
+      const t = challenge ? "CAŁY ALFABET bez błędu!" : "Litery ułożone!";
+      winOverlay(t,`Ułożyłaś: ${g2seq.join(" ")} — perfekcyjnie! 🌟`,startGame2);
     }
   }else{
     tile.classList.add("bad"); sadSound(); setTimeout(()=>tile.classList.remove("bad"),450);
+    if(challenge){
+      setTimeout(()=>{ g2next=0; restartBoard("g2slots","g2tiles");
+        document.getElementById("g2progress").textContent="Od początku! 🔁 Ułóż cały alfabet"; },500);
+    }
   }
 }
 
@@ -392,8 +414,13 @@ function updG3score(){
   document.getElementById("g3score").innerHTML=`⭐ ${g3points} pkt &nbsp; 🏆 ${getRekord()}`;
 }
 function startGame3(){
-  const n = diff==="easy"?4:(diff==="mid"?5:6);
-  const letters = shuffle(LETTERS_WITH_WORDS).slice(0,n).sort((a,b)=>ORDER[a]-ORDER[b]);
+  let letters;
+  if(challenge){
+    letters = LETTERS_WITH_WORDS.slice().sort((a,b)=>ORDER[a]-ORDER[b]); // wszystkie litery z obrazkami
+  }else{
+    const n = diff==="easy"?4:(diff==="mid"?5:6);
+    letters = shuffle(LETTERS_WITH_WORDS).slice(0,n).sort((a,b)=>ORDER[a]-ORDER[b]);
+  }
   g3seq = letters.map(l=>[l, WORDS[l][Math.floor(Math.random()*WORDS[l].length)]]);
   g3next=0; g3mist=0; show("game3"); renderG3();
 }
@@ -433,15 +460,21 @@ function pickG3(tile,letter,ev){
       const msg = (g3mist===0)
         ? `Bez ani jednej pomyłki! Bonus +20 pkt. 🌟<br>Masz teraz <b>${g3points}</b> pkt. Rekord: ${getRekord()} 🏆`
         : `Ułożone! Masz <b>${g3points}</b> pkt. Rekord: ${getRekord()} 🏆`;
-      winOverlay("Obrazki ułożone!", msg, startGame3);
+      winOverlay(challenge?"CAŁY ALFABET z obrazków!":"Obrazki ułożone!", msg, startGame3);
     }
   }else{
     tile.classList.add("bad"); sadSound();
     g3mist++; g3points=Math.max(0,g3points-3);
     floatScore(r.left+r.width/2-14, r.top-6, "−3", "#d33");
     updG3score();
-    document.getElementById("g3hint").textContent="Ups! Poszukaj obrazka na wcześniejszą literę alfabetu. 😊";
     setTimeout(()=>tile.classList.remove("bad"),450);
+    if(challenge){
+      setTimeout(()=>{ g3next=0; restartBoard("g3slots","g3tiles");
+        document.getElementById("g3progress").textContent="Od początku! 🔁 Ułóż cały alfabet"; },500);
+      document.getElementById("g3hint").textContent="Pomyłka! W trybie wyzwania zaczynasz od pierwszego obrazka. 🔥";
+    }else{
+      document.getElementById("g3hint").textContent="Ups! Poszukaj obrazka na wcześniejszą literę alfabetu. 😊";
+    }
   }
 }
 </script>
